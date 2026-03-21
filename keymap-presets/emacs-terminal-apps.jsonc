@@ -1,0 +1,124 @@
+// Emacs Terminal Apps -- AutoApp Layer Preset
+//
+// Replaces the legacy hardcoded emacsShortcutApps behavior from Swift.
+// Copy this layer object into your keymap.jsonc "layers" array.
+//
+// When active (Terminal, iTerm2, or Hyper), this layer:
+// - Overrides Capslox movement/editing bindings with emacs-native key combos
+// - Suppresses selection bindings that conflict with terminal emacs shortcuts
+// - Passes through all other keys to the base layer via on_miss: continue
+//
+// NOTE: Binding keys use the "caps-" prefix. If your keymap.jsonc uses
+// custom_modifiers (e.g. "caps" -> "hyper"), adjust the prefix accordingly.
+{
+  "id": "emacs-terminal-apps",
+  "name": "Emacs Shortcuts (Terminal/iTerm2/Hyper)",
+  "activation": {
+    "type": "auto_app",
+    "bundle_ids": [
+      "com.apple.Terminal",
+      "com.googlecode.iterm2",
+      "co.zeit.hyper"
+    ]
+  },
+  "on_miss": "continue",
+  "bindings": {
+
+    // =====================================================================
+    // Movement overrides -- replace macOS key combos with emacs equivalents
+    // =====================================================================
+
+    // moveLeftNWords (caps-a): Opt-Left -> Esc, B (emacs Meta-B: word back)
+    "caps-a": "ctrl-[ b",
+    // moveLeftNWords x3 (caps-cmd-a): same emacs combo
+    "caps-cmd-a": "ctrl-[ b",
+
+    // moveRightNWords (caps-g): Opt-Right -> Esc, F (emacs Meta-F: word forward)
+    "caps-g": "ctrl-[ f",
+    // moveRightNWords x3 (caps-cmd-g): same emacs combo
+    "caps-cmd-g": "ctrl-[ f",
+
+    // moveToLineBeginning (caps-p): Cmd-Left -> Ctrl-A (emacs line start)
+    "caps-p": "ctrl-a",
+
+    // moveToLineEnd (caps-;): Cmd-Right -> Ctrl-E (emacs line end)
+    "caps-semicolon": "ctrl-e",
+
+    // =====================================================================
+    // Editing overrides -- replace macOS key combos with emacs equivalents
+    // =====================================================================
+
+    // forwardDeleteWord (caps-cmd-r): Opt-ForwardDelete -> Esc, D (emacs Meta-D)
+    "caps-cmd-r": "ctrl-[ d",
+
+    // deleteToLineBeginning (caps-[): Cmd-Shift-Left + Delete -> Esc, W (emacs backward-kill-word, closest equivalent)
+    "caps-[": "ctrl-[ w",
+
+    // deleteToLineEnd (caps-/): Cmd-Shift-Right + ForwardDelete -> Ctrl-K (emacs kill-to-end)
+    "caps-/": "ctrl-k",
+
+    // deleteLine (caps-delete): select-all-line + delete -> Ctrl-U (emacs kill-line)
+    "caps-backspace": "ctrl-u",
+
+    // deleteAll (caps-cmd-delete): Cmd-A + Delete -> suppressed (no emacs equivalent)
+    "caps-cmd-backspace": "noop",
+
+    // =====================================================================
+    // Selection suppressions -- these bindings are suppressed in terminal
+    // apps because terminals do not support macOS-style selection shortcuts
+    // =====================================================================
+
+    // selectUpN (caps-i)
+    "caps-i": "noop",
+    // selectUpN x3 (caps-cmd-i)
+    "caps-cmd-i": "noop",
+    // selectUpN x10 (caps-y)
+    "caps-y": "noop",
+    // selectUpN x30 (caps-cmd-y)
+    "caps-cmd-y": "noop",
+
+    // selectDownN (caps-k)
+    "caps-k": "noop",
+    // selectDownN x3 (caps-cmd-k)
+    "caps-cmd-k": "noop",
+    // selectDownN x10 (caps-n)
+    "caps-n": "noop",
+    // selectDownN x30 (caps-cmd-n)
+    "caps-cmd-n": "noop",
+
+    // selectLeftN (caps-j)
+    "caps-j": "noop",
+    // selectLeftN x5 (caps-cmd-j)
+    "caps-cmd-j": "noop",
+
+    // selectRightN (caps-l)
+    "caps-l": "noop",
+    // selectRightN x5 (caps-cmd-l)
+    "caps-cmd-l": "noop",
+
+    // selectCurrentWord (caps-,)
+    "caps-comma": "noop",
+    // selectCurrentLine (caps-cmd-,)
+    "caps-cmd-comma": "noop",
+
+    // selectLeftNWords (caps-h)
+    "caps-h": "noop",
+    // selectLeftNWords x3 (caps-cmd-h)
+    "caps-cmd-h": "noop",
+
+    // selectRightNWords (caps-.)
+    "caps-period": "noop",
+    // selectRightNWords x3 (caps-cmd-.)
+    "caps-cmd-period": "noop",
+
+    // selectToLineBeginning (caps-u)
+    "caps-u": "noop",
+    // selectToLineEnd (caps-o)
+    "caps-o": "noop",
+
+    // selectToPageBeginning (caps-cmd-u)
+    "caps-cmd-u": "noop",
+    // selectToPageEnd (caps-cmd-o)
+    "caps-cmd-o": "noop"
+  }
+}
