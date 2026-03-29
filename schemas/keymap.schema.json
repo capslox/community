@@ -1,0 +1,928 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cdn.jsdelivr.net/gh/capslox/community@main/schemas/keymap.schema.json",
+  "title": "Capslox Keymap Configuration",
+  "description": "Schema for keymap.jsonc — the Capslox keyboard remapping configuration file.",
+  "type": "object",
+  "required": [
+    "version",
+    "layers"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference (ignored by the engine)."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[1-9]\\d*(\\.[0-9]+)?$",
+      "description": "Schema version in MAJOR.MINOR format (e.g. \"1.0\", \"2.0\"). Single-digit like \"2\" is accepted and treated as \"2.0\". MAJOR must be >= 1."
+    },
+    "custom_modifiers": {
+      "type": "object",
+      "description": "Map of physical key name → modifier alias. The physical key must have a ModTap/TapHold binding in at least one layer.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "vars": {
+      "type": "object",
+      "description": "User-defined variables for DRY config authoring. Each key maps a name to any JSON value. Reference with { \"$ref\": \"/vars/<name>\" } elsewhere in the config.",
+      "additionalProperties": true
+    },
+    "layers": {
+      "type": "array",
+      "description": "Ordered list of layers. First matching binding wins (top layer first).",
+      "items": {
+        "$ref": "#/$defs/Layer"
+      },
+      "minItems": 1
+    },
+    "fs_allow": {
+      "type": "array",
+      "description": "Filesystem paths that shell_action commands are allowed to access.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "key_sequence_timeout_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Auto-reset key sequence state after N ms of inactivity. Omit for unlimited (Vim-style)."
+    }
+  },
+  "$defs": {
+    "Layer": {
+      "type": "object",
+      "required": [
+        "id",
+        "on_miss",
+        "bindings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique layer identifier."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable layer name (optional)."
+        },
+        "activation": {
+          "$ref": "#/$defs/LayerActivation",
+          "description": "How this layer is activated. Defaults to \"base\"."
+        },
+        "on_miss": {
+          "$ref": "#/$defs/MissBehavior",
+          "description": "What happens when a key has no binding in this layer."
+        },
+        "propagate_modifiers": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether OS modifiers (shift, alt, etc.) are propagated through this layer's bindings."
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this layer is active. Disabled layers are skipped."
+        },
+        "bindings": {
+          "type": "object",
+          "description": "Map of trigger key (e.g. \"hyper-h\", \"g g\") → Binding.",
+          "additionalProperties": {
+            "$ref": "#/$defs/Binding"
+          }
+        }
+      }
+    },
+    "LayerActivation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "base"
+            }
+          },
+          "description": "Always-active base layer."
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "manual"
+            }
+          },
+          "description": "Layer activated/deactivated by layer_push/layer_pop/layer_toggle actions."
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "bundle_ids"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "auto_app"
+            },
+            "bundle_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "description": "App bundle IDs that activate this layer (supports dot-boundary wildcards like \"com.jetbrains.*\")."
+            }
+          },
+          "description": "Layer automatically activated when the frontmost app matches any bundle ID."
+        }
+      ]
+    },
+    "MissBehavior": {
+      "type": "string",
+      "enum": [
+        "continue",
+        "block",
+        "pass_to_os"
+      ],
+      "description": "Behavior when a key has no binding in this layer. \"continue\" = check next layer, \"block\" = swallow the key, \"pass_to_os\" = send to OS."
+    },
+    "Binding": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "String shorthand: key syntax (e.g. \"cmd-shift-a\", \"left\", \"ctrl-[ b\", \"alt-left*5\") or \"pass\" to pass through."
+        },
+        {
+          "$ref": "#/$defs/BindingActionObject"
+        },
+        {
+          "$ref": "#/$defs/BindingComplexObject"
+        },
+        {
+          "$ref": "#/$defs/BindingPassObject"
+        },
+        {
+          "$ref": "#/$defs/BindingModTapObject"
+        },
+        {
+          "$ref": "#/$defs/BindingTapHoldObject"
+        },
+        {
+          "$ref": "#/$defs/BindingLongPressObject"
+        },
+        {
+          "$ref": "#/$defs/ActionObject"
+        }
+      ],
+      "description": "A binding maps a trigger key to an action. Can be a string shorthand, a binding object with \"type\" field, or an action object with \"action\" field."
+    },
+    "BindingActionObject": {
+      "type": "object",
+      "required": [
+        "type",
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "action"
+        },
+        "action": {
+          "$ref": "#/$defs/Action"
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Explicit action wrapper binding (legacy form; prefer placing the action type directly)."
+    },
+    "BindingComplexObject": {
+      "type": "object",
+      "required": [
+        "type",
+        "trigger",
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "complex"
+        },
+        "trigger": {
+          "$ref": "#/$defs/TriggerType"
+        },
+        "action": {
+          "$ref": "#/$defs/Action"
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Complex binding that fires on a specific trigger event (down, up, hold, double_tap)."
+    },
+    "BindingPassObject": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "pass"
+        }
+      },
+      "description": "Pass-through binding (object form of the \"pass\" string shorthand)."
+    },
+    "BindingModTapObject": {
+      "type": "object",
+      "required": [
+        "type",
+        "tap"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "mod_tap"
+        },
+        "tap": {
+          "$ref": "#/$defs/Action",
+          "description": "Action to fire on tap (short press). The hold action activates the key as a modifier."
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 200,
+          "description": "Max duration (ms) for a tap vs hold decision. Default: 200."
+        }
+      },
+      "description": "Modifier-tap: hold = use key as modifier, tap = fire action."
+    },
+    "BindingTapHoldObject": {
+      "type": "object",
+      "required": [
+        "type",
+        "tap",
+        "hold"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "tap_hold"
+        },
+        "tap": {
+          "$ref": "#/$defs/Action",
+          "description": "Action for quick tap."
+        },
+        "hold": {
+          "$ref": "#/$defs/Action",
+          "description": "Action for sustained hold."
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 200,
+          "description": "Threshold (ms) separating tap from hold. Default: 200."
+        }
+      },
+      "description": "Tap-hold: different actions for tap vs hold."
+    },
+    "BindingLongPressObject": {
+      "type": "object",
+      "required": [
+        "type",
+        "short",
+        "long"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "long_press"
+        },
+        "short": {
+          "$ref": "#/$defs/Action",
+          "description": "Action for short press."
+        },
+        "long": {
+          "$ref": "#/$defs/Action",
+          "description": "Action for long press (held past threshold)."
+        },
+        "threshold_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 500,
+          "description": "Duration (ms) before switching from short to long. Default: 500."
+        }
+      },
+      "description": "Long-press: different actions based on press duration."
+    },
+    "Action": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Key syntax shorthand (e.g. \"left\", \"cmd-shift-a\") or \"noop\"."
+        },
+        {
+          "$ref": "#/$defs/ActionSendKeysObject"
+        },
+        {
+          "$ref": "#/$defs/ActionActionSequenceObject"
+        },
+        {
+          "$ref": "#/$defs/ActionToggleCapsLockObject"
+        },
+        {
+          "$ref": "#/$defs/ActionShowPreferencesObject"
+        },
+        {
+          "$ref": "#/$defs/ActionShowCheatSheetObject"
+        },
+        {
+          "$ref": "#/$defs/ActionClipboardCopyObject"
+        },
+        {
+          "$ref": "#/$defs/ActionClipboardCutObject"
+        },
+        {
+          "$ref": "#/$defs/ActionClipboardPasteObject"
+        },
+        {
+          "$ref": "#/$defs/ActionClipboardPastePlainObject"
+        },
+        {
+          "$ref": "#/$defs/ActionBindWindowObject"
+        },
+        {
+          "$ref": "#/$defs/ActionActivateWindowObject"
+        },
+        {
+          "$ref": "#/$defs/ActionHotstringObject"
+        },
+        {
+          "$ref": "#/$defs/ActionShowAppInfoObject"
+        },
+        {
+          "$ref": "#/$defs/ActionHiddenShowKeyboardMapObject"
+        },
+        {
+          "$ref": "#/$defs/ActionLayerPushObject"
+        },
+        {
+          "$ref": "#/$defs/ActionLayerPopObject"
+        },
+        {
+          "$ref": "#/$defs/ActionLayerToggleObject"
+        },
+        {
+          "$ref": "#/$defs/ActionLayerSwapObject"
+        },
+        {
+          "$ref": "#/$defs/ActionShellActionObject"
+        },
+        {
+          "$ref": "#/$defs/ActionNoOpObject"
+        }
+      ],
+      "description": "An action describes WHAT to do. Can be a string shorthand or a typed object with \"action\" discriminator."
+    },
+    "ActionObject": {
+      "description": "Any action type used directly as a binding (without an explicit Binding wrapper). Matches objects whose \"action\" field is an action discriminator, not a binding type.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ActionSendKeysObject"
+        },
+        {
+          "$ref": "#/$defs/ActionActionSequenceObject"
+        },
+        {
+          "$ref": "#/$defs/ActionToggleCapsLockObject"
+        },
+        {
+          "$ref": "#/$defs/ActionShowPreferencesObject"
+        },
+        {
+          "$ref": "#/$defs/ActionShowCheatSheetObject"
+        },
+        {
+          "$ref": "#/$defs/ActionClipboardCopyObject"
+        },
+        {
+          "$ref": "#/$defs/ActionClipboardCutObject"
+        },
+        {
+          "$ref": "#/$defs/ActionClipboardPasteObject"
+        },
+        {
+          "$ref": "#/$defs/ActionClipboardPastePlainObject"
+        },
+        {
+          "$ref": "#/$defs/ActionBindWindowObject"
+        },
+        {
+          "$ref": "#/$defs/ActionActivateWindowObject"
+        },
+        {
+          "$ref": "#/$defs/ActionHotstringObject"
+        },
+        {
+          "$ref": "#/$defs/ActionShowAppInfoObject"
+        },
+        {
+          "$ref": "#/$defs/ActionHiddenShowKeyboardMapObject"
+        },
+        {
+          "$ref": "#/$defs/ActionLayerPushObject"
+        },
+        {
+          "$ref": "#/$defs/ActionLayerPopObject"
+        },
+        {
+          "$ref": "#/$defs/ActionLayerToggleObject"
+        },
+        {
+          "$ref": "#/$defs/ActionLayerSwapObject"
+        },
+        {
+          "$ref": "#/$defs/ActionShellActionObject"
+        },
+        {
+          "$ref": "#/$defs/ActionNoOpObject"
+        }
+      ]
+    },
+    "ActionSendKeysObject": {
+      "type": "object",
+      "required": [
+        "action",
+        "keys"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "send_keys"
+        },
+        "keys": {
+          "type": "string",
+          "description": "Key syntax string (e.g. \"cmd-c\", \"ctrl-[ b\", \"alt-left*5\")."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Send a key sequence (one or more key combos with optional repeat)."
+    },
+    "ActionActionSequenceObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "action_sequence"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Action"
+          },
+          "description": "Ordered list of actions to execute sequentially."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Execute multiple actions in sequence."
+    },
+    "ActionToggleCapsLockObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "toggle_caps_lock"
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Toggle CapsLock state."
+    },
+    "ActionShowPreferencesObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "show_preferences"
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Open the Capslox preferences window."
+    },
+    "ActionShowCheatSheetObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "show_cheat_sheet"
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Show the keyboard shortcut cheat sheet."
+    },
+    "ActionClipboardCopyObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "clipboard_copy"
+        },
+        "slot": {
+          "type": "string",
+          "default": "",
+          "description": "Clipboard slot identifier."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Copy to an extra clipboard slot."
+    },
+    "ActionClipboardCutObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "clipboard_cut"
+        },
+        "slot": {
+          "type": "string",
+          "default": "",
+          "description": "Clipboard slot identifier."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Cut to an extra clipboard slot."
+    },
+    "ActionClipboardPasteObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "clipboard_paste"
+        },
+        "slot": {
+          "type": "string",
+          "default": "",
+          "description": "Clipboard slot identifier."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Paste from an extra clipboard slot."
+    },
+    "ActionClipboardPastePlainObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "clipboard_paste_plain"
+        },
+        "slot": {
+          "type": "string",
+          "default": "",
+          "description": "Clipboard slot identifier."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Paste plain text from an extra clipboard slot (strips formatting)."
+    },
+    "ActionBindWindowObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "bind_window"
+        },
+        "slot": {
+          "type": "string",
+          "default": "",
+          "description": "Window binding slot identifier."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Bind the current window to a slot for quick switching."
+    },
+    "ActionActivateWindowObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "activate_window"
+        },
+        "slot": {
+          "type": "string",
+          "default": "",
+          "description": "Window binding slot identifier."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Activate (switch to) the window bound to a slot."
+    },
+    "ActionHotstringObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "hotstring"
+        },
+        "text": {
+          "type": "string",
+          "default": "",
+          "description": "Text to type. Empty triggers hotstring input mode."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Hotstring: type text or activate hotstring input mode."
+    },
+    "ActionShowAppInfoObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "show_app_info"
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Show current app/window info in a modal."
+    },
+    "ActionHiddenShowKeyboardMapObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "hidden_show_keyboard_map"
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Debug: show keyboard map."
+    },
+    "ActionLayerPushObject": {
+      "type": "object",
+      "required": [
+        "action",
+        "target"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "layer_push"
+        },
+        "target": {
+          "type": "string",
+          "description": "Layer ID to push onto the stack."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Push a layer onto the active stack."
+    },
+    "ActionLayerPopObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "layer_pop"
+        },
+        "target": {
+          "type": "string",
+          "description": "Layer ID to pop. Omit to pop the topmost layer."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Pop a layer from the active stack."
+    },
+    "ActionLayerToggleObject": {
+      "type": "object",
+      "required": [
+        "action",
+        "target"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "layer_toggle"
+        },
+        "target": {
+          "type": "string",
+          "description": "Layer ID to toggle on/off."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Toggle a layer on or off."
+    },
+    "ActionLayerSwapObject": {
+      "type": "object",
+      "required": [
+        "action",
+        "target"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "layer_swap"
+        },
+        "target": {
+          "type": "string",
+          "description": "Layer ID to swap to (replaces current topmost layer)."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Swap the topmost active layer for another."
+    },
+    "ActionShellActionObject": {
+      "type": "object",
+      "required": [
+        "action",
+        "command"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "shell_action"
+        },
+        "command": {
+          "type": "string",
+          "description": "Shell command to execute. The command's working directory is restricted by fs_allow."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Execute a shell command."
+    },
+    "ActionNoOpObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "no_op"
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "No-op: consume the key but do nothing (useful in when-clauses to disable a binding for specific apps)."
+    },
+    "TriggerType": {
+      "type": "string",
+      "enum": [
+        "down",
+        "up",
+        "hold",
+        "double_tap"
+      ],
+      "description": "Event that triggers a complex binding."
+    },
+    "WhenClauses": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/WhenClause"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WhenClause"
+          },
+          "minItems": 1,
+          "description": "Multiple conditional overrides, checked in order."
+        }
+      ],
+      "description": "Conditional overrides: when the frontmost app matches, use a different action."
+    },
+    "WhenClause": {
+      "type": "object",
+      "required": [
+        "apps",
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "apps": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "description": "Literal list of app bundle IDs (supports dot-boundary wildcards like \"com.jetbrains.*\")."
+            },
+            {
+              "$ref": "#/$defs/RefObject"
+            }
+          ],
+          "description": "App bundle IDs to match. Can be a literal array or a { \"$ref\": \"/vars/<name>\" } reference."
+        },
+        "action": {
+          "$ref": "#/$defs/Action",
+          "description": "Action to use when the frontmost app matches."
+        }
+      },
+      "description": "A single conditional override: when the frontmost app matches, use this action instead."
+    },
+    "RefObject": {
+      "type": "object",
+      "required": [
+        "$ref"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "type": "string",
+          "pattern": "^#?/",
+          "description": "JSON Pointer to a value in the same document (e.g. \"/vars/apps_emacs_keybindings\"). Leading '#' is optional."
+        }
+      },
+      "description": "A $ref object that references another value in the document via JSON Pointer (RFC 6901)."
+    }
+  }
+}
