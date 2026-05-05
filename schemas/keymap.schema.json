@@ -190,10 +190,13 @@
           "$ref": "#/$defs/BindingLongPressObject"
         },
         {
+          "$ref": "#/$defs/BindingComplexObject"
+        },
+        {
           "$ref": "#/$defs/ActionObject"
         }
       ],
-      "description": "A binding maps a trigger key to an action. Forms: (1) string shorthand — \"cmd-c\", \"continue\", \"block\", \"pass_to_os\", \"noop\"; (2) action object — {\"action\": \"send_keys\", \"keys\": \"cmd-c\"}, which is sugar for {\"type\": \"action\", \"action\": \"send_keys\", ...} with the redundant \"type\" omitted; (3) temporal binding — {\"type\": \"mod_tap\", ...} / {\"type\": \"long_press\", ...}. The engine also accepts the explicit {\"type\": \"action\", ...} form at runtime, but the sugar form is canonical."
+      "description": "A binding maps a trigger key to an action. Forms: (1) string shorthand — \"cmd-c\", \"continue\", \"block\", \"pass_to_os\", \"noop\"; (2) action object — {\"action\": \"send_keys\", \"keys\": \"cmd-c\"}, which is sugar for {\"type\": \"action\", \"action\": \"send_keys\", ...} with the redundant \"type\" omitted; (3) temporal binding — {\"type\": \"mod_tap\", ...} / {\"type\": \"long_press\", ...}; (4) complex binding — {\"type\": \"complex\", \"trigger\": \"double_tap\", ...}. The engine also accepts the explicit {\"type\": \"action\", ...} form at runtime, but the sugar form is canonical."
     },
     "BindingDirectiveObject": {
       "type": "object",
@@ -260,6 +263,33 @@
         }
       },
       "description": "Long-press: different actions based on press duration."
+    },
+    "BindingComplexObject": {
+      "type": "object",
+      "required": [
+        "type",
+        "trigger",
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "complex"
+        },
+        "trigger": {
+          "$ref": "#/$defs/TriggerType",
+          "description": "Trigger condition: \"down\" (key press), \"up\" (key release), \"hold\" (held past threshold), \"double_tap\" (two quick presses)."
+        },
+        "action": {
+          "$ref": "#/$defs/Action",
+          "description": "Action to fire when the trigger condition is met."
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses",
+          "description": "Optional condition clauses that must all be true for this binding to trigger."
+        }
+      },
+      "description": "Complex binding: trigger an action based on a specific key event pattern (double-tap, hold, etc.)."
     },
     "Action": {
       "oneOf": [
