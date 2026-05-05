@@ -1,7 +1,7 @@
 # Capslox Community
 
 The hub for users to interact, share, and grow.
-用户的官方交流、分享与反馈中心。
+Capslox 用户交流、分享与反馈的地方。也欢迎讨论键盘、效率工具（包括其他键盘相关工具）等话题。
 
 <!--[English](#english) | [中文](#chinese)-->
 

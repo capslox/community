@@ -21,9 +21,24 @@
     },
     "custom_modifiers": {
       "type": "object",
-      "description": "Map of physical key name → modifier alias. The physical key must have a ModTap/TapHold binding in at least one layer.",
+      "description": "Map of physical key name → custom modifier declaration. String shorthand: alias only (tap defaults to key name, timeout 200ms). Object form: { \"alias\": \"cx\", \"tap\": \"esc\", \"timeout_ms\": 300 }. Declaring a key here provides a default mod_tap fallback — no explicit mod_tap binding needed.",
       "additionalProperties": {
-        "type": "string"
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "Alias name (string shorthand). Tap defaults to key name, timeout 200ms."
+          },
+          {
+            "type": "object",
+            "required": ["alias"],
+            "additionalProperties": false,
+            "properties": {
+              "alias": { "type": "string", "description": "Modifier alias name." },
+              "tap": { "description": "Tap action (string key syntax or action object). Defaults to the physical key name." },
+              "timeout_ms": { "type": "integer", "minimum": 1, "default": 200, "description": "Mod-tap timeout in milliseconds." }
+            }
+          }
+        ]
       }
     },
     "vars": {
@@ -90,7 +105,7 @@
         },
         "bindings": {
           "type": "object",
-          "description": "Map of trigger key (e.g. \"hyper-h\", \"g g\") → Binding.",
+          "description": "Map of trigger key (e.g. \"cx-h\") → Binding.",
           "additionalProperties": {
             "$ref": "#/$defs/Binding"
           }
@@ -162,22 +177,14 @@
       "oneOf": [
         {
           "type": "string",
-          "description": "String shorthand: key syntax (e.g. \"cmd-shift-a\", \"left\", \"ctrl-[ b\", \"alt-left*5\") or \"pass\" to pass through."
+          "pattern": "^(continue|block|pass_to_os|noop|(\\()?([a-z0-9_\\[\\]/=,.;']+(-[a-z0-9_\\[\\]/=,.;']+)*)(\\*[1-9][0-9]{0,2})?( ([a-z0-9_\\[\\]/=,.;']+(-[a-z0-9_\\[\\]/=,.;']+)*)(\\*[1-9][0-9]{0,2})?)*(\\)\\*[1-9][0-9]{0,2})?)$",
+          "description": "String shorthand: directive keyword or key syntax. Directives: \"continue\" (fall through), \"block\" (swallow), \"pass_to_os\" (send to OS). Key syntax: [modifier-]key[ [modifier-]key]... with optional *N repeat (1-999). Modifiers: ctrl, shift, alt/opt, cmd/win/meta/super, or custom. Keys: a-z, 0-9, space, enter, tab, esc, backspace, delete, caps, up/down/left/right, home/end/pageup/pagedown, f1-f20, [ ] / = , . ; ', minus, backslash, backtick, kp_0-kp_9, kp_enter/kp_plus/kp_minus/kp_multiply/kp_divide/kp_decimal/kp_equal/kp_clear. Examples: \"cmd-shift-a\", \"left\", \"ctrl-[ b\", \"alt-left*5\", \"continue\"."
         },
         {
-          "$ref": "#/$defs/BindingActionObject"
-        },
-        {
-          "$ref": "#/$defs/BindingComplexObject"
-        },
-        {
-          "$ref": "#/$defs/BindingPassObject"
+          "$ref": "#/$defs/BindingDirectiveObject"
         },
         {
           "$ref": "#/$defs/BindingModTapObject"
-        },
-        {
-          "$ref": "#/$defs/BindingTapHoldObject"
         },
         {
           "$ref": "#/$defs/BindingLongPressObject"
@@ -186,53 +193,9 @@
           "$ref": "#/$defs/ActionObject"
         }
       ],
-      "description": "A binding maps a trigger key to an action. Can be a string shorthand, a binding object with \"type\" field, or an action object with \"action\" field."
+      "description": "A binding maps a trigger key to an action. Forms: (1) string shorthand — \"cmd-c\", \"continue\", \"block\", \"pass_to_os\", \"noop\"; (2) action object — {\"action\": \"send_keys\", \"keys\": \"cmd-c\"}, which is sugar for {\"type\": \"action\", \"action\": \"send_keys\", ...} with the redundant \"type\" omitted; (3) temporal binding — {\"type\": \"mod_tap\", ...} / {\"type\": \"long_press\", ...}. The engine also accepts the explicit {\"type\": \"action\", ...} form at runtime, but the sugar form is canonical."
     },
-    "BindingActionObject": {
-      "type": "object",
-      "required": [
-        "type",
-        "action"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "type": {
-          "const": "action"
-        },
-        "action": {
-          "$ref": "#/$defs/Action"
-        },
-        "when": {
-          "$ref": "#/$defs/WhenClauses"
-        }
-      },
-      "description": "Explicit action wrapper binding (legacy form; prefer placing the action type directly)."
-    },
-    "BindingComplexObject": {
-      "type": "object",
-      "required": [
-        "type",
-        "trigger",
-        "action"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "type": {
-          "const": "complex"
-        },
-        "trigger": {
-          "$ref": "#/$defs/TriggerType"
-        },
-        "action": {
-          "$ref": "#/$defs/Action"
-        },
-        "when": {
-          "$ref": "#/$defs/WhenClauses"
-        }
-      },
-      "description": "Complex binding that fires on a specific trigger event (down, up, hold, double_tap)."
-    },
-    "BindingPassObject": {
+    "BindingDirectiveObject": {
       "type": "object",
       "required": [
         "type"
@@ -240,10 +203,10 @@
       "additionalProperties": false,
       "properties": {
         "type": {
-          "const": "pass"
+          "enum": ["continue", "block", "pass_to_os"]
         }
       },
-      "description": "Pass-through binding (object form of the \"pass\" string shorthand)."
+      "description": "Directive binding (key-level on_miss override). \"continue\" = fall through, \"block\" = swallow, \"pass_to_os\" = send to OS."
     },
     "BindingModTapObject": {
       "type": "object",
@@ -268,35 +231,6 @@
         }
       },
       "description": "Modifier-tap: hold = use key as modifier, tap = fire action."
-    },
-    "BindingTapHoldObject": {
-      "type": "object",
-      "required": [
-        "type",
-        "tap",
-        "hold"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "type": {
-          "const": "tap_hold"
-        },
-        "tap": {
-          "$ref": "#/$defs/Action",
-          "description": "Action for quick tap."
-        },
-        "hold": {
-          "$ref": "#/$defs/Action",
-          "description": "Action for sustained hold."
-        },
-        "timeout_ms": {
-          "type": "integer",
-          "minimum": 0,
-          "default": 200,
-          "description": "Threshold (ms) separating tap from hold. Default: 200."
-        }
-      },
-      "description": "Tap-hold: different actions for tap vs hold."
     },
     "BindingLongPressObject": {
       "type": "object",
@@ -331,7 +265,8 @@
       "oneOf": [
         {
           "type": "string",
-          "description": "Key syntax shorthand (e.g. \"left\", \"cmd-shift-a\") or \"noop\"."
+          "pattern": "^(noop|(\\()?([a-z0-9_\\[\\]/=,.;']+(-[a-z0-9_\\[\\]/=,.;']+)*)(\\*[1-9][0-9]{0,2})?( ([a-z0-9_\\[\\]/=,.;']+(-[a-z0-9_\\[\\]/=,.;']+)*)(\\*[1-9][0-9]{0,2})?)*(\\)\\*[1-9][0-9]{0,2})?)$",
+          "description": "Key syntax shorthand or \"noop\". Key syntax: [modifier-]key[ [modifier-]key]... with optional *N repeat (1-999). Modifiers: ctrl, shift, alt/opt, cmd/win/meta/super, or custom. Keys: a-z, 0-9, space, enter, tab, esc, backspace, delete, caps, up/down/left/right, home/end/pageup/pagedown, f1-f20, [ ] / = , . ; ', minus, backslash, backtick, kp_0-kp_9, kp_enter/kp_plus/kp_minus/kp_multiply/kp_divide/kp_decimal/kp_equal/kp_clear. Examples: \"left\", \"cmd-shift-a\", \"ctrl-[ b\", \"noop\"."
         },
         {
           "$ref": "#/$defs/ActionSendKeysObject"
@@ -347,6 +282,9 @@
         },
         {
           "$ref": "#/$defs/ActionShowCheatSheetObject"
+        },
+        {
+          "$ref": "#/$defs/ActionEditKeymapObject"
         },
         {
           "$ref": "#/$defs/ActionClipboardCopyObject"
@@ -415,6 +353,9 @@
           "$ref": "#/$defs/ActionShowCheatSheetObject"
         },
         {
+          "$ref": "#/$defs/ActionEditKeymapObject"
+        },
+        {
           "$ref": "#/$defs/ActionClipboardCopyObject"
         },
         {
@@ -474,7 +415,8 @@
         },
         "keys": {
           "type": "string",
-          "description": "Key syntax string (e.g. \"cmd-c\", \"ctrl-[ b\", \"alt-left*5\")."
+          "pattern": "^(\\()?([a-z0-9_\\[\\]/=,.;']+(-[a-z0-9_\\[\\]/=,.;']+)*)(\\*[1-9][0-9]{0,2})?( ([a-z0-9_\\[\\]/=,.;']+(-[a-z0-9_\\[\\]/=,.;']+)*)(\\*[1-9][0-9]{0,2})?)*(\\)\\*[1-9][0-9]{0,2})?$",
+          "description": "Key syntax string: [modifier-]key[ [modifier-]key]... with optional *N repeat (1-999). Examples: \"cmd-c\", \"ctrl-[ b\", \"alt-left*5\"."
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
@@ -552,6 +494,22 @@
         }
       },
       "description": "Show the keyboard shortcut cheat sheet."
+    },
+    "ActionEditKeymapObject": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "edit_keymap"
+        },
+        "when": {
+          "$ref": "#/$defs/WhenClauses"
+        }
+      },
+      "description": "Open the keymap editor."
     },
     "ActionClipboardCopyObject": {
       "type": "object",
@@ -851,16 +809,6 @@
         }
       },
       "description": "No-op: consume the key but do nothing (useful in when-clauses to disable a binding for specific apps)."
-    },
-    "TriggerType": {
-      "type": "string",
-      "enum": [
-        "down",
-        "up",
-        "hold",
-        "double_tap"
-      ],
-      "description": "Event that triggers a complex binding."
     },
     "WhenClauses": {
       "oneOf": [
