@@ -407,6 +407,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Send a key sequence (one or more key combos with optional repeat)."
@@ -430,6 +434,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Execute multiple actions in sequence."
@@ -446,6 +454,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Toggle CapsLock state."
@@ -462,6 +474,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Open the Capslox preferences window."
@@ -478,6 +494,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Open the keymap editor."
@@ -499,6 +519,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Copy to an extra clipboard slot."
@@ -520,6 +544,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Cut to an extra clipboard slot."
@@ -541,6 +569,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Paste from an extra clipboard slot."
@@ -562,6 +594,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Paste plain text from an extra clipboard slot (strips formatting)."
@@ -583,6 +619,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Bind the current window to a slot for quick switching."
@@ -604,6 +644,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Activate (switch to) the window bound to a slot."
@@ -625,6 +669,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Hotstring: type text or activate hotstring input mode."
@@ -641,6 +689,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Show current app/window info in a modal."
@@ -657,6 +709,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Debug: show keyboard map."
@@ -678,6 +734,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Push a layer onto the active stack."
@@ -698,6 +758,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Pop a layer from the active stack."
@@ -719,6 +783,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Toggle a layer on or off."
@@ -740,6 +808,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Swap the topmost active layer for another."
@@ -761,6 +833,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Execute a shell command."
@@ -777,6 +853,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional which-key menu label (F13 M2). Object form only."
         }
       },
       "description": "Noop: consume the key but do nothing (useful in when-clauses to disable a binding for specific apps)."
