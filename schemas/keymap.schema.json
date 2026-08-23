@@ -56,8 +56,9 @@
     },
     "key_sequence_timeout_ms": {
       "type": "integer",
-      "minimum": 0,
-      "description": "Auto-reset key sequence state after N ms of inactivity. Omit for unlimited (Vim-style)."
+      "minimum": 1,
+      "default": 1000,
+      "description": "How long a key sequence waits for the NEXT key before it resets, in milliseconds. Per-key, not per-sequence — the timer restarts on every keystroke, so a long sequence only needs you to be prompt key-to-key. Omit for the default 1000ms, matching Vim's `timeoutlen`. There is no unlimited setting."
     },
     "experimental_actions": {
       "type": "boolean",
@@ -98,12 +99,74 @@
         },
         "bindings": {
           "type": "object",
-          "description": "Map of trigger key (e.g. \"cx-h\") → Binding.",
+          "description": "Map of trigger key (e.g. \"cx-h\") → Binding. A key ending in \">\" (e.g. \"cmd-g>\") is a nested key-sequence prefix whose value is a continuation block of further keys — sugar for the flat space-separated form \"cmd-g g\".",
+          "propertyNames": {
+            "$ref": "#/$defs/BindingKeyName"
+          },
+          "patternProperties": {
+            ">$": {
+              "$ref": "#/$defs/SequenceBlock"
+            },
+            "^[^>]*\\s[^>]*$": {
+              "$ref": "#/$defs/SequenceLeafBinding"
+            }
+          },
           "additionalProperties": {
             "$ref": "#/$defs/Binding"
           }
         }
       }
+    },
+    "SequenceBlock": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Nested key-sequence continuation block — the value of a key ending in \">\". Its keys are full combo segments and there is NO modifier inheritance from the parent, so \"cmd-g>\": { \"m\": … } means cmd+g THEN bare m, identical to the flat \"cmd-g m\". A child key may itself end in \">\" to nest deeper. Two rules here are whole-tree properties that JSON Schema cannot express, so the loader stays authoritative for them: two spellings must not resolve to the same canonical path, and no key may be both a leaf and a prefix anywhere in the desugared tree.",
+      "not": {
+        "required": [
+          "$ref"
+        ]
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/BindingKeyName"
+      },
+      "patternProperties": {
+        ">$": {
+          "$ref": "#/$defs/SequenceBlock"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/SequenceLeafBinding"
+      }
+    },
+    "SequenceLeafBinding": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Binding"
+        },
+        {
+          "not": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "continue",
+                  "block",
+                  "pass_to_os"
+                ]
+              },
+              {
+                "$ref": "#/$defs/BindingDirectiveObject"
+              }
+            ]
+          }
+        }
+      ],
+      "description": "A Binding that terminates a key sequence. Identical to Binding except that the three directives are excluded: a directive is a key-level on_miss override and is meaningless as the last key of a multi-key sequence, so the loader rejects the whole reload with DirectiveSequenceLeaf. Expressed by subtraction from Binding rather than by restating its key-syntax pattern, so the two cannot drift apart."
+    },
+    "BindingKeyName": {
+      "type": "string",
+      "pattern": "^[^>]*[^>\\s\\u0085][^>]*>?$",
+      "description": "A binding key: at least one non-whitespace character, and \">\" allowed only as a single trailing sequence-prefix marker. Mirrors the loader's BadMarkerPosition and EmptyChildKey rejections so an editor flags them before a reload does. U+0085 is spelled out because ECMAScript \\s omits it while Rust's char::is_whitespace includes it; the reverse gap, U+FEFF, is left alone — this pattern rejects a key made only of it while the loader would accept one, which errs toward the editor complaining rather than the reload failing."
     },
     "LayerActivation": {
       "oneOf": [
