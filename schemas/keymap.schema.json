@@ -340,9 +340,6 @@
           "$ref": "#/$defs/ActionEditKeymapObject"
         },
         {
-          "$ref": "#/$defs/ActionShowCommandPadObject"
-        },
-        {
           "$ref": "#/$defs/ActionClipboardCopyObject"
         },
         {
@@ -407,9 +404,6 @@
         },
         {
           "$ref": "#/$defs/ActionEditKeymapObject"
-        },
-        {
-          "$ref": "#/$defs/ActionShowCommandPadObject"
         },
         {
           "$ref": "#/$defs/ActionClipboardCopyObject"
@@ -570,46 +564,6 @@
         }
       },
       "description": "Open the keymap editor."
-    },
-    "ActionShowCommandPadObject": {
-      "type": "object",
-      "required": [
-        "action"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "action": {
-          "const": "show_command_pad"
-        },
-        "template": {
-          "type": "string",
-          "description": "Optional shell command template prefilled in Command Pad."
-        },
-        "context": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "selection"
-            ]
-          },
-          "default": [],
-          "description": "Source context snapshots acquired before Command Pad takes focus."
-        },
-        "confirm": {
-          "type": "boolean",
-          "default": false,
-          "description": "Require Command Pad's standard second-Enter confirmation before execution."
-        },
-        "when": {
-          "$ref": "#/$defs/WhenClauses"
-        },
-        "label": {
-          "type": "string",
-          "description": "Optional label shown in the which-key menu. Object form only."
-        }
-      },
-      "description": "Open Command Pad with an optional template, source context, and execution confirmation."
     },
     "ActionClipboardCopyObject": {
       "type": "object",
