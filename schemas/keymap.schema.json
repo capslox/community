@@ -56,8 +56,9 @@
     },
     "key_sequence_timeout_ms": {
       "type": "integer",
-      "minimum": 0,
-      "description": "Auto-reset key sequence state after N ms of inactivity. Omit for unlimited (Vim-style)."
+      "minimum": 1,
+      "default": 1000,
+      "description": "How long a key sequence waits for the NEXT key before it resets, in milliseconds. Per-key, not per-sequence — the timer restarts on every keystroke, so a long sequence only needs you to be prompt key-to-key. Omit for the default 1000ms. There is no unlimited setting."
     },
     "experimental_actions": {
       "type": "boolean",
@@ -98,12 +99,74 @@
         },
         "bindings": {
           "type": "object",
-          "description": "Map of trigger key (e.g. \"cx-h\") → Binding.",
+          "description": "Map of trigger key (e.g. \"cx-h\") → Binding. A key ending in \">\" (e.g. \"cmd-g>\") is a nested key-sequence prefix whose value is a continuation block of further keys — sugar for the flat space-separated form \"cmd-g g\".",
+          "propertyNames": {
+            "$ref": "#/$defs/BindingKeyName"
+          },
+          "patternProperties": {
+            ">$": {
+              "$ref": "#/$defs/SequenceBlock"
+            },
+            "^[^>]*\\s[^>]*$": {
+              "$ref": "#/$defs/SequenceLeafBinding"
+            }
+          },
           "additionalProperties": {
             "$ref": "#/$defs/Binding"
           }
         }
       }
+    },
+    "SequenceBlock": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Nested key-sequence continuation block — the value of a key ending in \">\". Its keys are full combo segments and there is NO modifier inheritance from the parent, so \"cmd-g>\": { \"m\": … } means cmd+g THEN bare m, identical to the flat \"cmd-g m\". A child key may itself end in \">\" to nest deeper. Two whole-tree properties are beyond what JSON Schema can express, and they are not handled alike: a key that is both a leaf and a prefix anywhere in the desugared tree makes the loader reject the whole keymap, while two spellings resolving to the same canonical path are not reported at all — the last one silently wins.",
+      "not": {
+        "required": [
+          "$ref"
+        ]
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/BindingKeyName"
+      },
+      "patternProperties": {
+        ">$": {
+          "$ref": "#/$defs/SequenceBlock"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/SequenceLeafBinding"
+      }
+    },
+    "SequenceLeafBinding": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Binding"
+        },
+        {
+          "not": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "continue",
+                  "block",
+                  "pass_to_os"
+                ]
+              },
+              {
+                "$ref": "#/$defs/BindingDirectiveObject"
+              }
+            ]
+          }
+        }
+      ],
+      "description": "A Binding that terminates a key sequence. Identical to Binding except that the three directives are excluded: a directive is a key-level on_miss override and is meaningless as the last key of a multi-key sequence, so the loader rejects the whole reload with DirectiveSequenceLeaf. Expressed by subtraction from Binding rather than by restating its key-syntax pattern, so the two cannot drift apart."
+    },
+    "BindingKeyName": {
+      "type": "string",
+      "pattern": "^[^>]*[^>\\s\\u0085][^>]*>?$",
+      "description": "A binding key: at least one non-whitespace character, and \">\" allowed only as a single trailing sequence-prefix marker. Mirrors the loader's BadMarkerPosition and EmptyChildKey rejections so an editor flags them before a reload does. U+0085 is spelled out because ECMAScript \\s omits it while Rust's char::is_whitespace includes it; the reverse gap, U+FEFF, is left alone — this pattern rejects a key made only of it while the loader would accept one, which errs toward the editor complaining rather than the reload failing."
     },
     "LayerActivation": {
       "oneOf": [
@@ -407,6 +470,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Send a key sequence (one or more key combos with optional repeat)."
@@ -430,6 +497,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Execute multiple actions in sequence."
@@ -446,6 +517,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Toggle CapsLock state."
@@ -462,6 +537,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Open the Capslox preferences window."
@@ -478,6 +557,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Open the keymap editor."
@@ -499,6 +582,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Copy to an extra clipboard slot."
@@ -520,6 +607,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Cut to an extra clipboard slot."
@@ -541,6 +632,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Paste from an extra clipboard slot."
@@ -562,6 +657,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Paste plain text from an extra clipboard slot (strips formatting)."
@@ -583,6 +682,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Bind the current window to a slot for quick switching."
@@ -604,6 +707,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Activate (switch to) the window bound to a slot."
@@ -625,6 +732,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Hotstring: type text or activate hotstring input mode."
@@ -641,6 +752,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Show current app/window info in a modal."
@@ -657,6 +772,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Debug: show keyboard map."
@@ -678,6 +797,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Push a layer onto the active stack."
@@ -698,6 +821,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Pop a layer from the active stack."
@@ -719,6 +846,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Toggle a layer on or off."
@@ -740,6 +871,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Swap the topmost active layer for another."
@@ -761,6 +896,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Execute a shell command."
@@ -777,6 +916,10 @@
         },
         "when": {
           "$ref": "#/$defs/WhenClauses"
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional label shown in the which-key menu. Object form only."
         }
       },
       "description": "Noop: consume the key but do nothing (useful in when-clauses to disable a binding for specific apps)."
