@@ -18,6 +18,16 @@ Capslox 用户交流、分享与反馈的地方。也欢迎讨论键盘、效率
 - To report issues, use [Bugs](https://github.com/capslox/community/discussions/categories/bugs).
 - To suggest features, use [Ideas](https://github.com/capslox/community/discussions/categories/ideas).
 
+### Keymap schema
+`schemas/keymap.schema.json` describes the `keymap.jsonc` format. Add this line to
+your config to get completion and validation in editors that support JSON Schema:
+
+```jsonc
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/capslox/community@main/schemas/keymap.schema.json"
+}
+```
+
 ---
 
 <a name="chinese"></a>
@@ -29,3 +39,13 @@ Capslox 用户交流、分享与反馈的地方。也欢迎讨论键盘、效率
 ### 参与
 - 报告程序错误：请前往 [Bugs](https://github.com/capslox/community/discussions/categories/bugs) 频道。
 - 提交功能建议：请前往 [Ideas](https://github.com/capslox/community/discussions/categories/ideas) 频道。
+
+### 配置文件 Schema
+`schemas/keymap.schema.json` 定义了 `keymap.jsonc` 的格式。在配置文件里加上这一行，
+支持 JSON Schema 的编辑器就能提供补全和校验：
+
+```jsonc
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/capslox/community@main/schemas/keymap.schema.json"
+}
+```
