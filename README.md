@@ -15,7 +15,13 @@ Capslox 用户交流、分享与反馈的地方。也欢迎讨论键盘、效率
 - [Documentation](https://capslox.com/docs)
 
 ### Community
-- To report issues, use [Bugs](https://github.com/capslox/community/discussions/categories/bugs).
+> **Community scope:** Discussions are for public, non-urgent conversation, sharing,
+> feedback, and peer help. They are not monitored as support tickets. For time-sensitive
+> requests, or matters involving your account, subscription, payment, refund, order, or
+> private information, use Feedback in the Capslox app or email
+> [support@capslox.com](mailto:support@capslox.com).
+
+- To report reproducible product bugs, use [Bugs](https://github.com/capslox/community/discussions/categories/bugs). Do not include private account or payment details.
 - To suggest features, use [Ideas](https://github.com/capslox/community/discussions/categories/ideas).
 
 ### Keymap schema
@@ -37,7 +43,9 @@ your config to get completion and validation in editors that support JSON Schema
 - [官方文档](https://capslox.com/cn/docs)
 
 ### 参与
-- 报告程序错误：请前往 [Bugs](https://github.com/capslox/community/discussions/categories/bugs) 频道。
+> **社区范围：** Discussions 用于公开、非紧急的交流、分享、反馈和互助，不作为客服工单处理。涉及需要及时处理的请求，或账户、订阅、付款、退款、订单、隐私信息等事项，请使用 Capslox app 内的反馈功能，或发送邮件至 [support@capslox.com](mailto:support@capslox.com)。
+
+- 报告可复现的程序错误：请前往 [Bugs](https://github.com/capslox/community/discussions/categories/bugs) 频道；请勿包含账户、付款等私人信息。
 - 提交功能建议：请前往 [Ideas](https://github.com/capslox/community/discussions/categories/ideas) 频道。
 
 ### 配置文件 Schema
